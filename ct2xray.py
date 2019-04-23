@@ -24,11 +24,7 @@ def ct2xray(xray_source, dest_board, ct_3d):
     same_zs = all(corner.z == dest_board[0].z for corner in dest_board)
     same_xs = all(corner.x == dest_board[0].x for corner in dest_board)
 
-    # find old and new pixel ranges for proper conversion
-    input_min, output_min = 100000, 100000
-    input_max, output_max = 0, 0
-
-    out = []
+    out_scan = []
     if same_ys_top and same_ys_bottom:
         # iterate over dcm files (y axis in the ct scan)
         board_ys = [corner.y for corner in dest_board]
@@ -46,29 +42,16 @@ def ct2xray(xray_source, dest_board, ct_3d):
                 # iterate over x axis in the dcm
                 board_xs = [corner.x for corner in dest_board]
                 for x_i in range(len(dcm[0][min(board_xs):max(board_xs)])):
-                    # print(x_i, end='\t')
                     new_pixel_val = 0
                     # iterate over z axis and find calculate the integral
                     for z_i in z_range:
                         pixel_val = dcm[z_i][x_i]
                         if pixel_val >= 0: # in the cone range
-                            # print(pixel_val, end=',')
-                            # find old pixel ranges
-                            if pixel_val > output_max:
-                                output_max = pixel_val
-                            if pixel_val < output_min:
-                                output_min = pixel_val
-
                             # calculate the integral
                             new_pixel_val += pixel_val
 
-                    if new_pixel_val > input_max:
-                        input_max = new_pixel_val
-                    if new_pixel_val < input_min:
-                        input_min = new_pixel_val
-
                     row.append(new_pixel_val)
-                out.append(row)
+                out_scan.append(row)
 
             # all the corners of the flat are in the same x axis
             elif same_xs:
@@ -87,27 +70,16 @@ def ct2xray(xray_source, dest_board, ct_3d):
                     for x_i in x_range:
                         pixel_val = dcm[z_i][x_i]
                         if pixel_val >= 0: # in the cone range
-                            # find old pixel ranges
-                            if pixel_val > output_max:
-                                output_max = pixel_val
-                            if pixel_val < output_min:
-                                output_min = pixel_val
-
                             # calculate the integral
                             new_pixel_val += pixel_val
 
-                    # find new pixel ranges
-                    if new_pixel_val > input_max:
-                        input_max = new_pixel_val
-                    if new_pixel_val < input_min:
-                        input_min = new_pixel_val
-
                     row.append(new_pixel_val)
-                out.append(row)
-            sys.stdout.write(f'\t{int(y_i/len(ct_3d) * 100)} %\r')
-            sys.stdout.flush()
+                out_scan.append(row)
+            print(f'\t{int(y_i/len(ct_3d) * 100)} %\r')
+            # sys.stdout.write(f'\t{int(y_i/len(ct_3d) * 100)} %\r')
+            # sys.stdout.flush()
 
-    return out
+    return out_scan
 
 
 def dcm2ct3D():
